@@ -40,7 +40,7 @@
 - 输入：`config.GetVal("filterStr")`、`c.GetMeta("name")`、`c.GetMeta("id")`、`c.Id`、`c.GetMeta("image")`、`c.GetMeta("state")`
 - 输出：`Containers.Filter()` 设置各容器的 `c.Display = true/false`
 
-- [ ] **步骤 1：编写失败的单元测试**
+- [x] **步骤 1：编写失败的单元测试**
 
 新建 `container/sort_test.go`：
 ```go
@@ -99,12 +99,12 @@ func TestContainersFilter(t *testing.T) {
 }
 ```
 
-- [ ] **步骤 2：运行测试验证其失败**
+- [x] **步骤 2：运行测试验证其失败**
 
 运行：`go test -v ./container -run TestContainersFilter`
 预期：失败（大小写敏感、缺少镜像/ID匹配、或正则遇到 `nginx[` 发生 panic）。
 
-- [ ] **步骤 3：在 `container/sort.go` 中实现过滤逻辑**
+- [x] **步骤 3：在 `container/sort.go` 中实现过滤逻辑**
 
 使用 `strings.Contains` 和 `strings.ToLower` 实现不区分大小写的包含匹配：
 ```go
@@ -135,12 +135,12 @@ func (a Containers) Filter() {
 }
 ```
 
-- [ ] **步骤 4：运行测试验证其通过**
+- [x] **步骤 4：运行测试验证其通过**
 
 运行：`go test -v ./container -run TestContainersFilter`
 预期：PASS
 
-- [ ] **步骤 5：提交代码**
+- [x] **步骤 5：提交代码**
 
 ```bash
 git add container/sort.go container/sort_test.go
@@ -159,7 +159,7 @@ git commit -m "feat(container): add case-insensitive multi-attribute filtering"
 - 输入：`ui.Event`，按键路径如 `/sys/kbd/<backspace>`、`/sys/kbd/C-8`、`/sys/kbd/<delete>`、`/sys/kbd/<space>` 等
 - 输出：更新 `i.Data` 并向 `i.Stream()` 推送变动
 
-- [ ] **步骤 1：编写失败的单元测试**
+- [x] **步骤 1：编写失败的单元测试**
 
 新建 `widgets/input_test.go`：
 ```go
@@ -206,12 +206,12 @@ func TestInputKeyPress(t *testing.T) {
 }
 ```
 
-- [ ] **步骤 2：运行测试验证其失败**
+- [x] **步骤 2：运行测试验证其失败**
 
 运行：`go test -v ./widgets -run TestInputKeyPress`
 预期：失败（无法识别 `<backspace>`、符号未在可输入列表中等）。
 
-- [ ] **步骤 3：修改 `widgets/input.go`**
+- [x] **步骤 3：修改 `widgets/input.go`**
 
 1. 扩展 `input_chars` 包含常用符号与空格：
 ```go
@@ -250,12 +250,12 @@ func (i *Input) KeyPress(e ui.Event) {
 }
 ```
 
-- [ ] **步骤 4：运行测试验证其通过**
+- [x] **步骤 4：运行测试验证其通过**
 
 运行：`go test -v ./widgets -run TestInputKeyPress`
 预期：PASS
 
-- [ ] **步骤 5：提交代码**
+- [x] **步骤 5：提交代码**
 
 ```bash
 git add widgets/input.go widgets/input_test.go
@@ -276,7 +276,7 @@ git commit -m "feat(widgets): improve input widget backspace and symbol support"
 - 输入：终端按键 `/`（路径 `/sys/kbd//`）与 `f`（路径 `/sys/kbd/f`）
 - 输出：`HandleKey(path string, f func(ui.Event))`，主界面监听并唤起 `FilterMenu()`，帮助列表显示说明
 
-- [ ] **步骤 1：编写失败的单元测试**
+- [x] **步骤 1：编写失败的单元测试**
 
 新建 `grid_test.go`：
 ```go
@@ -312,12 +312,12 @@ func TestSlashKeyBinding(t *testing.T) {
 }
 ```
 
-- [ ] **步骤 2：运行测试验证其失败**
+- [x] **步骤 2：运行测试验证其失败**
 
 运行：`go test -v . -run TestSlashKeyBinding`
 预期：失败（`undefined: HandleKey`）。
 
-- [ ] **步骤 3：实现 `HandleKey` 并集成快捷键**
+- [x] **步骤 3：实现 `HandleKey` 并集成快捷键**
 
 1. 在 `keys.go` 中添加 `HandleKey`：
 ```go
@@ -345,17 +345,17 @@ func HandleKey(path string, f func(ui.Event)) {
 	{"[f] - filter/search containers", ""},
 ```
 
-- [ ] **步骤 4：运行测试验证其通过**
+- [x] **步骤 4：运行测试验证其通过**
 
 运行：`go test -v . -run TestSlashKeyBinding`
 预期：PASS
 
-- [ ] **步骤 5：运行全量测试套件**
+- [x] **步骤 5：运行全量测试套件**
 
 运行：`go test -v ./...`
 预期：全部通过
 
-- [ ] **步骤 6：提交代码**
+- [x] **步骤 6：提交代码**
 
 ```bash
 git add keys.go grid.go menus.go grid_test.go
