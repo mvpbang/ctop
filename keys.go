@@ -39,3 +39,10 @@ func HandleKeys(i string, f func()) {
 		ui.Handle(k, func(ui.Event) { f() })
 	}
 }
+
+// Apply a handler directly to DefaultEvtStream without cleanPath collapse
+func HandleKey(path string, f func(ui.Event)) {
+	ui.DefaultEvtStream.Lock()
+	defer ui.DefaultEvtStream.Unlock()
+	ui.DefaultEvtStream.Handlers[path] = f
+}

@@ -179,10 +179,12 @@ func Display() bool {
 	ui.Handle("/sys/kbd/D", func(ui.Event) {
 		dumpContainer(cursor.Selected())
 	})
-	ui.Handle("/sys/kbd/f", func(ui.Event) {
+	openFilter := func(ui.Event) {
 		menu = FilterMenu
 		ui.StopLoop()
-	})
+	}
+	ui.Handle("/sys/kbd/f", openFilter)
+	HandleKey("/sys/kbd//", openFilter)
 	ui.Handle("/sys/kbd/H", func(ui.Event) {
 		config.Toggle("enableHeader")
 		RedrawRows(true)
