@@ -1,9 +1,8 @@
 package container
 
 import (
-	"fmt"
-	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/bcicen/ctop/config"
 )
@@ -111,15 +110,24 @@ func (a Containers) Less(i, j int) bool {
 }
 
 func (a Containers) Filter() {
-	filter := config.GetVal("filterStr")
-	re := regexp.MustCompile(fmt.Sprintf(".*%s", filter))
+	filter := strings.ToLower(config.GetVal("filterStr"))
 
 	for _, c := range a {
 		c.Display = true
-		// Apply name filter
-		if re.FindAllString(c.GetMeta("name"), 1) == nil {
-			c.Display = false
+		if filter != "" {
+			name := strings.ToLower(c.GetMeta("name"))
+			image := strings.ToLower(c.GetMeta("image"))
+			id := strings.ToLower(c.Id)
+			shortId := strings.ToLower(c.GetMeta("id"))
+
+			if !strings.Contains(name, filter) &&
+				!strings.Contains(image, filter) &&
+				!strings.Contains(id, filter) &&
+				!strings.Contains(shortId, filter) {
+				c.Display = false
+			}
 		}
+
 		// Apply state filter
 		if !config.GetSwitchVal("allContainers") && c.GetMeta("state") != "running" {
 			c.Display = false
