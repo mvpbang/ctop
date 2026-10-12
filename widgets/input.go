@@ -4,10 +4,11 @@ import (
 	"strings"
 
 	ui "github.com/gizak/termui"
+	tm "github.com/nsf/termbox-go"
 )
 
 var (
-	input_chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_."
+	input_chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_.:/ "
 )
 
 type Padding [2]int // x,y padding
@@ -27,7 +28,7 @@ func NewInput() *Input {
 	i := &Input{
 		Block:       *ui.NewBlock(),
 		Label:       "input",
-		MaxLen:      20,
+		MaxLen:      50,
 		TextFgColor: ui.ThemeAttr("menu.text.fg"),
 		TextBgColor: ui.ThemeAttr("menu.text.bg"),
 		padding:     Padding{4, 2},
@@ -59,19 +60,27 @@ func (i *Input) Buffer() ui.Buffer {
 }
 
 func (i *Input) Stream() chan string {
-	i.stream = make(chan string)
+	i.stream = make(chan string, 10)
 	return i.stream
 }
 
 func (i *Input) KeyPress(e ui.Event) {
 	ch := strings.Replace(e.Path, "/sys/kbd/", "", -1)
-	if ch == "C-8" {
+	if ch == "<space>" {
+		ch = " "
+	}
+	if ch == "C-8" || ch == "<backspace>" || ch == "<delete>" || ch == "C-h" {
 		idx := len(i.Data) - 1
 		if idx > -1 {
 			i.Data = i.Data[0:idx]
-			i.stream <- i.Data
+			if i.stream != nil {
+				select {
+				case i.stream <- i.Data:
+				default:
+				}
+			}
 		}
-		ui.Render(i)
+		i.render()
 		return
 	}
 	if len(i.Data) >= i.MaxLen {
@@ -79,7 +88,18 @@ func (i *Input) KeyPress(e ui.Event) {
 	}
 	if strings.Contains(input_chars, ch) {
 		i.Data += ch
-		i.stream <- i.Data
+		if i.stream != nil {
+			select {
+			case i.stream <- i.Data:
+			default:
+			}
+		}
+		i.render()
+	}
+}
+
+func (i *Input) render() {
+	if tm.IsInit {
 		ui.Render(i)
 	}
 }
