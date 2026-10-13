@@ -10,6 +10,7 @@ import (
 	"github.com/bcicen/ctop/widgets"
 	"github.com/bcicen/ctop/widgets/menu"
 	ui "github.com/gizak/termui"
+	tm "github.com/nsf/termbox-go"
 	"github.com/pkg/browser"
 )
 
@@ -371,17 +372,48 @@ func ExecShell() MenuFn {
 
 	ui.DefaultEvtStream.ResetHandlers()
 	defer ui.DefaultEvtStream.ResetHandlers()
-	// Detect and execute default shell in container.
-	// Execute Ash shell command: /bin/sh -c
-	// Reset colors: printf '\e[0m\e[?25h'
-	// Clear screen
-	// Run default shell for the user. It's configured in /etc/passwd and looks like root:x:0:0:root:/root:/bin/bash:
-	//  1. Get current user id: id -un
-	//  2. Find user's line in /etc/passwd by grep
-	//  3. Extract default user's shell by cutting seven's column separated by :
-	//  4. Execute the shell path with eval
-	if err := c.Exec([]string{"/bin/sh", "-c", "printf '\\e[0m\\e[?25h' && clear && eval `grep ^$(id -un): /etc/passwd | cut -d : -f 7-`"}); err != nil {
-		log.StatusErr(err)
+
+	wasInit := tm.IsInit
+	if wasInit {
+		ui.Close()
+	}
+	defer func() {
+		if wasInit {
+			if err := ui.Init(); err != nil {
+				log.Errorf("reinitializing ui: %v", err)
+			}
+			tm.SetInputMode(tm.InputAlt)
+			ui.ColorMap = ColorMap
+			header.Align()
+			status.Align()
+			RedrawRows(true)
+		}
+	}()
+
+	shellScript := `export TERM=xterm; PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin; SHELL_BIN=""; if command -v id >/dev/null 2>&1 && [ -f /etc/passwd ]; then U=$(id -un 2>/dev/null); if [ -n "$U" ]; then S=$(grep "^${U}:" /etc/passwd 2>/dev/null | cut -d: -f7); case "$S" in *nologin|*false|"") ;; *) [ -x "$S" ] && SHELL_BIN="$S" ;; esac; fi; fi; if [ -n "$SHELL_BIN" ]; then exec "$SHELL_BIN"; elif command -v bash >/dev/null 2>&1; then exec bash; elif command -v sh >/dev/null 2>&1; then exec sh; elif command -v ash >/dev/null 2>&1; then exec ash; else exec /bin/sh; fi`
+
+	candidates := [][]string{
+		{"/bin/sh", "-c", shellScript},
+		{"sh", "-c", shellScript},
+		{"bash"},
+		{"/bin/bash"},
+		{"/bin/sh"},
+		{"/bin/ash"},
+	}
+
+	var execErr error
+	for _, cmd := range candidates {
+		execErr = c.Exec(cmd)
+		if execErr == nil {
+			return nil
+		}
+		if c.Meta["state"] != "running" {
+			break
+		}
+	}
+
+	if execErr != nil {
+		log.StatusErr(fmt.Errorf("exec [%s]: %v", c.GetMeta("name"), execErr))
 	}
 
 	return nil

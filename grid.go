@@ -250,6 +250,15 @@ func Display() bool {
 		for menu != nil {
 			menu = menu()
 		}
+		if log.StatusQueued() {
+			for sm := range log.FlushStatus() {
+				if sm.IsError {
+					status.ShowErr(sm.Text)
+				} else {
+					status.Show(sm.Text)
+				}
+			}
+		}
 		return false
 	}
 

@@ -57,27 +57,26 @@ func (w *frameWriter) Write(p []byte) (n int, err error) {
 		return 0, nil
 	}
 
-	if len(p) > 8 {
+	// Docker multiplexed header format: [STREAM_TYPE, 0, 0, 0, SIZE1, SIZE2, SIZE3, SIZE4]
+	// STREAM_TYPE in {0, 1, 2}
+	if len(p) >= 8 && p[0] <= 2 && p[1] == 0 && p[2] == 0 && p[3] == 0 {
 		var targetWriter io.Writer
 		switch p[0] {
 		case STDIN:
 			targetWriter = w.stdin
-			break
 		case STDOUT:
 			targetWriter = w.stdout
-			break
 		case STDERR:
 			targetWriter = w.stderr
-			break
-		default:
-			return 0, wrongFrameFormat
 		}
-
-		n, err := targetWriter.Write(p[8:])
-		return n + 8, err
+		if targetWriter != nil {
+			n, err := targetWriter.Write(p[8:])
+			return n + 8, err
+		}
 	}
 
-	return 0, wrongFrameFormat
+	// Fallback for raw terminal stream or frames < 8 bytes
+	return w.stdout.Write(p)
 }
 
 func (dc *Docker) Exec(cmd []string) error {
@@ -98,6 +97,7 @@ func (dc *Docker) Exec(cmd []string) error {
 		InputStream:  &noClosableReader{os.Stdin},
 		OutputStream: &frameWriter{os.Stdout, os.Stderr, os.Stdin},
 		ErrorStream:  os.Stderr,
+		Tty:          true,
 		RawTerminal:  true,
 	})
 }
