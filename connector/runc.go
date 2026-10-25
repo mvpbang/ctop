@@ -75,6 +75,7 @@ func NewRunc() (Connector, error) {
 		factory:       factory,
 		containers:    make(map[string]*container.Container),
 		libContainers: make(map[string]libcontainer.Container),
+		needsRefresh:  make(chan string, 60),
 		closed:        make(chan struct{}),
 		lock:          sync.RWMutex{},
 	}

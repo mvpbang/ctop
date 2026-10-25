@@ -134,7 +134,9 @@ func validSort(s string) {
 func panicExit() {
 	if r := recover(); r != nil {
 		Shutdown()
-		panic(r)
+		if os.Getenv("CTOP_DEBUG") == "1" {
+			panic(r)
+		}
 		fmt.Printf("error: %s\n", r)
 		os.Exit(1)
 	}

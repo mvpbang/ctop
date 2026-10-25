@@ -15,10 +15,11 @@ type MockLogs struct {
 func (l *MockLogs) Stream() chan models.Log {
 	logCh := make(chan models.Log)
 	go func() {
+		defer close(logCh)
 		for {
 			select {
 			case <-l.done:
-				break
+				return
 			default:
 				logCh <- models.Log{Timestamp: time.Now(), Message: mockLog}
 				time.Sleep(250 * time.Millisecond)

@@ -4,3 +4,8 @@ ctop
 *.log
 .superpowers/
 _build/
+release/
+.DS_Store
+ctop.sock
+*.test
+coverage.out

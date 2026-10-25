@@ -82,8 +82,12 @@ func (gc *GridCursor) Idx() int {
 }
 
 func (gc *GridCursor) ScrollPage() {
+	if cGrid == nil {
+		return
+	}
+	maxRows := cGrid.MaxRows()
 	// skip scroll if no need to page
-	if gc.Len() < cGrid.MaxRows() {
+	if maxRows <= 0 || gc.Len() < maxRows {
 		cGrid.Offset = 0
 		return
 	}
@@ -91,7 +95,7 @@ func (gc *GridCursor) ScrollPage() {
 	idx := gc.Idx()
 
 	// page down
-	if idx >= cGrid.Offset+cGrid.MaxRows() {
+	if idx >= cGrid.Offset+maxRows {
 		cGrid.Offset++
 		cGrid.Align()
 	}
@@ -189,8 +193,15 @@ func (gc *GridCursor) PgDown() {
 
 // number of pages at current row count and term height
 func (gc *GridCursor) pgCount() int {
-	pages := gc.Len() / cGrid.MaxRows()
-	if gc.Len()%cGrid.MaxRows() > 0 {
+	if cGrid == nil {
+		return 0
+	}
+	maxRows := cGrid.MaxRows()
+	if maxRows <= 0 {
+		return 0
+	}
+	pages := gc.Len() / maxRows
+	if gc.Len()%maxRows > 0 {
 		pages++
 	}
 	return pages

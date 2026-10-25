@@ -1,4 +1,4 @@
-<p align="center"><img width="200px" src="/_docs/img/logo.png" alt="ctop"/></p>
+<p align="center"><img width="200px" src="/docs/img/logo.png" alt="ctop"/></p>
 
 #
 
@@ -7,7 +7,7 @@
 Top-like interface for container metrics
 
 `ctop` provides a concise and condensed overview of real-time metrics for multiple containers:
-<p align="center"><img src="_docs/img/grid.gif" alt="ctop"/></p>
+<p align="center"><img src="docs/img/grid.gif" alt="ctop"/></p>
 
 as well as a [single container view][single_view] for inspecting a specific container.
 
@@ -122,9 +122,9 @@ Option | Description
 |       <kbd>S</kbd>       | Save current configuration to file                         |
 |       <kbd>q</kbd>       | Quit ctop                                                  |
 
-[build]: _docs/build.md
-[connectors]: _docs/connectors.md
-[single_view]: _docs/single.md
+[build]: docs/build.md
+[connectors]: docs/connectors.md
+[single_view]: docs/single.md
 [release]: https://img.shields.io/github/release/bcicen/ctop.svg "ctop"
 [homebrew]: https://img.shields.io/homebrew/v/ctop.svg "ctop"
 [macports]: https://repology.org/badge/version-for-repo/macports/ctop.svg?header=macports "ctop"

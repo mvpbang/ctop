@@ -41,7 +41,6 @@ func exportConfig() File {
 	return c
 }
 
-//
 func Read() error {
 	var config File
 

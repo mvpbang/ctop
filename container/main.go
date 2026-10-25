@@ -1,6 +1,8 @@
 package container
 
 import (
+	"sync"
+
 	"github.com/bcicen/ctop/connector/collector"
 	"github.com/bcicen/ctop/connector/manager"
 	"github.com/bcicen/ctop/cwidgets"
@@ -27,6 +29,7 @@ type Container struct {
 	updater   cwidgets.WidgetUpdater
 	collector collector.Collector
 	manager   manager.Manager
+	lock      sync.RWMutex
 }
 
 func New(id string, collector collector.Collector, manager manager.Manager) *Container {
@@ -53,17 +56,52 @@ func (c *Container) RecreateWidgets() {
 }
 
 func (c *Container) SetUpdater(u cwidgets.WidgetUpdater) {
+	c.lock.Lock()
 	c.updater = u
-	c.updater.SetMeta(c.Meta)
+	metaCopy := make(models.Meta, len(c.Meta))
+	for k, v := range c.Meta {
+		metaCopy[k] = v
+	}
+	c.lock.Unlock()
+	u.SetMeta(metaCopy)
 }
 
 func (c *Container) SetMeta(k, v string) {
+	c.lock.Lock()
 	c.Meta[k] = v
-	c.updater.SetMeta(c.Meta)
+	metaCopy := make(models.Meta, len(c.Meta))
+	for mk, mv := range c.Meta {
+		metaCopy[mk] = mv
+	}
+	updater := c.updater
+	c.lock.Unlock()
+
+	if updater != nil {
+		updater.SetMeta(metaCopy)
+	}
 }
 
 func (c *Container) GetMeta(k string) string {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 	return c.Meta.Get(k)
+}
+
+func (c *Container) SetMetrics(m models.Metrics) {
+	c.lock.Lock()
+	c.Metrics = m
+	updater := c.updater
+	c.lock.Unlock()
+
+	if updater != nil {
+		updater.SetMetrics(m)
+	}
+}
+
+func (c *Container) GetMetrics() models.Metrics {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return c.Metrics
 }
 
 func (c *Container) SetState(s string) {
@@ -88,18 +126,19 @@ func (c *Container) Logs() collector.LogCollector {
 func (c *Container) Read(stream chan models.Metrics) {
 	go func() {
 		for metrics := range stream {
-			c.Metrics = metrics
-			c.updater.SetMetrics(metrics)
+			c.SetMetrics(metrics)
 		}
 		log.Infof("reader stopped for container: %s", c.Id)
-		c.Metrics = models.NewMetrics()
+		c.SetMetrics(models.NewMetrics())
+		c.lock.Lock()
 		c.Widgets.Reset()
+		c.lock.Unlock()
 	}()
 	log.Infof("reader started for container: %s", c.Id)
 }
 
 func (c *Container) Start() {
-	if c.Meta["state"] != running {
+	if c.GetMeta("state") != running {
 		if err := c.manager.Start(); err != nil {
 			log.Warningf("container %s: %v", c.Id, err)
 			log.StatusErr(err)
@@ -110,8 +149,19 @@ func (c *Container) Start() {
 }
 
 func (c *Container) Stop() {
-	if c.Meta["state"] == running {
+	if c.GetMeta("state") == running {
 		if err := c.manager.Stop(); err != nil {
+			log.Warningf("container %s: %v", c.Id, err)
+			log.StatusErr(err)
+			return
+		}
+		c.SetState("exited")
+	}
+}
+
+func (c *Container) Kill() {
+	if c.GetMeta("state") == running {
+		if err := c.manager.Kill(); err != nil {
 			log.Warningf("container %s: %v", c.Id, err)
 			log.StatusErr(err)
 			return
@@ -128,7 +178,7 @@ func (c *Container) Remove() {
 }
 
 func (c *Container) Pause() {
-	if c.Meta["state"] == running {
+	if c.GetMeta("state") == running {
 		if err := c.manager.Pause(); err != nil {
 			log.Warningf("container %s: %v", c.Id, err)
 			log.StatusErr(err)
@@ -139,7 +189,7 @@ func (c *Container) Pause() {
 }
 
 func (c *Container) Unpause() {
-	if c.Meta["state"] == "paused" {
+	if c.GetMeta("state") == "paused" {
 		if err := c.manager.Unpause(); err != nil {
 			log.Warningf("container %s: %v", c.Id, err)
 			log.StatusErr(err)
@@ -150,7 +200,7 @@ func (c *Container) Unpause() {
 }
 
 func (c *Container) Restart() {
-	if c.Meta["state"] == running {
+	if c.GetMeta("state") == running {
 		if err := c.manager.Restart(); err != nil {
 			log.Warningf("container %s: %v", c.Id, err)
 			log.StatusErr(err)

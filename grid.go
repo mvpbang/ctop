@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/bcicen/ctop/config"
 	"github.com/bcicen/ctop/cwidgets/single"
 	ui "github.com/gizak/termui"
@@ -60,6 +62,11 @@ func RedrawRows(clr bool) {
 
 	for _, c := range cursor.filtered {
 		cGrid.AddRows(c.Widgets)
+	}
+
+	filterStr := config.GetVal("filterStr")
+	if len(cursor.filtered) == 0 && filterStr != "" {
+		cGrid.SetEmptyNotice(fmt.Sprintf(" No containers match filter '%s' (press '/' to edit, Esc to clear)", filterStr))
 	}
 
 	if clr {

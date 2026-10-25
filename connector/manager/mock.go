@@ -14,6 +14,10 @@ func (m *Mock) Stop() error {
 	return ActionNotImplErr
 }
 
+func (m *Mock) Kill() error {
+	return ActionNotImplErr
+}
+
 func (m *Mock) Remove() error {
 	return ActionNotImplErr
 }

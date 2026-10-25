@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/bcicen/ctop/cwidgets/compact"
 	ui "github.com/gizak/termui"
 )
 
@@ -26,5 +27,14 @@ func TestSlashKeyBinding(t *testing.T) {
 	fn(ui.Event{Path: "/sys/kbd//"})
 	if !called {
 		t.Fatalf("expected handler to be invoked")
+	}
+}
+
+func TestPgCountZeroMaxRows(t *testing.T) {
+	cGrid = compact.NewCompactGrid()
+	gc := &GridCursor{}
+	pages := gc.pgCount()
+	if pages != 0 {
+		t.Errorf("expected 0 pages, got %d", pages)
 	}
 }

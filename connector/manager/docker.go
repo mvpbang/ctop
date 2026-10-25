@@ -40,9 +40,11 @@ var wrongFrameFormat = errors.New("Wrong frame format")
 // A frame has a Header and a Payload
 // Header: [8]byte{STREAM_TYPE, 0, 0, 0, SIZE1, SIZE2, SIZE3, SIZE4}
 // STREAM_TYPE can be:
-//    0: stdin (is written on stdout)
-//    1: stdout
-//    2: stderr
+//
+//	0: stdin (is written on stdout)
+//	1: stdout
+//	2: stderr
+//
 // SIZE1, SIZE2, SIZE3, SIZE4 are the four bytes of the uint32 size encoded as big endian.
 // But we don't use size, because we don't need to find the end of frame.
 type frameWriter struct {
@@ -117,6 +119,13 @@ func (dc *Docker) Start() error {
 func (dc *Docker) Stop() error {
 	if err := dc.client.StopContainer(dc.id, 3); err != nil {
 		return fmt.Errorf("cannot stop container: %v", err)
+	}
+	return nil
+}
+
+func (dc *Docker) Kill() error {
+	if err := dc.client.KillContainer(api.KillContainerOptions{ID: dc.id, Signal: api.SIGKILL}); err != nil {
+		return fmt.Errorf("cannot kill container: %v", err)
 	}
 	return nil
 }

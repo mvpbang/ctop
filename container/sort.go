@@ -24,46 +24,48 @@ var Sorters = map[string]sortMethod{
 	"id":   idSorter,
 	"name": nameSorter,
 	"cpu": func(c1, c2 *Container) bool {
-		// Use secondary sort method if equal values
-		if c1.CPUUtil == c2.CPUUtil {
+		m1 := c1.GetMetrics()
+		m2 := c2.GetMetrics()
+		if m1.CPUUtil == m2.CPUUtil {
 			return nameSorter(c1, c2)
 		}
-		return c1.CPUUtil > c2.CPUUtil
+		return m1.CPUUtil > m2.CPUUtil
 	},
 	"mem": func(c1, c2 *Container) bool {
-		// Use secondary sort method if equal values
-		if c1.MemUsage == c2.MemUsage {
+		m1 := c1.GetMetrics()
+		m2 := c2.GetMetrics()
+		if m1.MemUsage == m2.MemUsage {
 			return nameSorter(c1, c2)
 		}
-		return c1.MemUsage > c2.MemUsage
+		return m1.MemUsage > m2.MemUsage
 	},
 	"mem %": func(c1, c2 *Container) bool {
-		// Use secondary sort method if equal values
-		if c1.MemPercent == c2.MemPercent {
+		m1 := c1.GetMetrics()
+		m2 := c2.GetMetrics()
+		if m1.MemPercent == m2.MemPercent {
 			return nameSorter(c1, c2)
 		}
-		return c1.MemPercent > c2.MemPercent
+		return m1.MemPercent > m2.MemPercent
 	},
 	"net": func(c1, c2 *Container) bool {
 		sum1 := sumNet(c1)
 		sum2 := sumNet(c2)
-		// Use secondary sort method if equal values
 		if sum1 == sum2 {
 			return nameSorter(c1, c2)
 		}
 		return sum1 > sum2
 	},
 	"pids": func(c1, c2 *Container) bool {
-		// Use secondary sort method if equal values
-		if c1.Pids == c2.Pids {
+		m1 := c1.GetMetrics()
+		m2 := c2.GetMetrics()
+		if m1.Pids == m2.Pids {
 			return nameSorter(c1, c2)
 		}
-		return c1.Pids > c2.Pids
+		return m1.Pids > m2.Pids
 	},
 	"io": func(c1, c2 *Container) bool {
 		sum1 := sumIO(c1)
 		sum2 := sumIO(c2)
-		// Use secondary sort method if equal values
 		if sum1 == sum2 {
 			return nameSorter(c1, c2)
 		}
@@ -102,7 +104,10 @@ func (a Containers) Sort()         { sort.Sort(a) }
 func (a Containers) Len() int      { return len(a) }
 func (a Containers) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a Containers) Less(i, j int) bool {
-	f := Sorters[config.GetVal("sortField")]
+	f, ok := Sorters[config.GetVal("sortField")]
+	if !ok || f == nil {
+		f = Sorters["state"]
+	}
 	if config.GetSwitchVal("sortReversed") {
 		return f(a[j], a[i])
 	}
@@ -135,6 +140,12 @@ func (a Containers) Filter() {
 	}
 }
 
-func sumNet(c *Container) int64 { return c.NetRx + c.NetTx }
+func sumNet(c *Container) int64 {
+	m := c.GetMetrics()
+	return m.NetRx + m.NetTx
+}
 
-func sumIO(c *Container) int64 { return c.IOBytesRead + c.IOBytesWrite }
+func sumIO(c *Container) int64 {
+	m := c.GetMetrics()
+	return m.IOBytesRead + m.IOBytesWrite
+}

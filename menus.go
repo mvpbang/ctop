@@ -18,22 +18,22 @@ import (
 type MenuFn func() MenuFn
 
 var helpDialog = []menu.Item{
-	{"<enter> - open container menu", ""},
-	{"", ""},
-	{"[a] - toggle display of all containers", ""},
-	{"[/] - filter/search containers", ""},
-	{"[f] - filter/search containers", ""},
-	{"[h] - open this help dialog", ""},
-	{"[H] - toggle ctop header", ""},
-	{"[s] - select container sort field", ""},
-	{"[r] - reverse container sort order", ""},
-	{"[o] - open single view", ""},
-	{"[l] - view container logs ([t] to toggle timestamp when open)", ""},
-	{"[e] - exec shell", ""},
-	{"[w] - open browser (first port is http)", ""},
-	{"[c] - configure columns", ""},
-	{"[S] - save current configuration to file", ""},
-	{"[q] - exit ctop", ""},
+	{Val: "<enter> - open container menu", Label: ""},
+	{Val: "", Label: ""},
+	{Val: "[a] - toggle display of all containers", Label: ""},
+	{Val: "[/] - filter/search containers", Label: ""},
+	{Val: "[f] - filter/search containers", Label: ""},
+	{Val: "[h] - open this help dialog", Label: ""},
+	{Val: "[H] - toggle ctop header", Label: ""},
+	{Val: "[s] - select container sort field", Label: ""},
+	{Val: "[r] - reverse container sort order", Label: ""},
+	{Val: "[o] - open single view", Label: ""},
+	{Val: "[l] - view container logs ([t] to toggle timestamp when open)", Label: ""},
+	{Val: "[e] - exec shell", Label: ""},
+	{Val: "[w] - open browser (first port is http)", Label: ""},
+	{Val: "[c] - configure columns", Label: ""},
+	{Val: "[S] - save current configuration to file", Label: ""},
+	{Val: "[q] - exit ctop", Label: ""},
 }
 
 func HelpMenu() MenuFn {
@@ -99,7 +99,7 @@ func SortMenu() MenuFn {
 	m.BorderLabel = "Sort Field"
 
 	for _, field := range container.SortFields() {
-		m.AddItems(menu.Item{field, ""})
+		m.AddItems(menu.Item{Val: field, Label: ""})
 	}
 
 	// set cursor position to current sort field
@@ -155,7 +155,7 @@ func ColumnsMenu() MenuFn {
 			} else {
 				txt += disabledStr
 			}
-			m.AddItems(menu.Item{col.Name, txt})
+			m.AddItems(menu.Item{Val: col.Name, Label: txt})
 		}
 	}
 
@@ -222,6 +222,7 @@ func ContainerMenu() MenuFn {
 
 	if c.Meta["state"] == "running" {
 		items = append(items, menu.Item{Val: "stop", Label: "[s] stop"})
+		items = append(items, menu.Item{Val: "kill", Label: "[k] kill"})
 		items = append(items, menu.Item{Val: "pause", Label: "[p] pause"})
 		items = append(items, menu.Item{Val: "restart", Label: "[r] restart"})
 		items = append(items, menu.Item{Val: "exec", Label: "[e] exec shell"})
@@ -276,6 +277,10 @@ func ContainerMenu() MenuFn {
 		})
 	}
 	if c.Meta["state"] == "running" {
+		ui.Handle("/sys/kbd/k", func(ui.Event) {
+			selected = "kill"
+			ui.StopLoop()
+		})
 		ui.Handle("/sys/kbd/e", func(ui.Event) {
 			selected = "exec"
 			ui.StopLoop()
@@ -321,6 +326,8 @@ func ContainerMenu() MenuFn {
 		nextMenu = Confirm(confirmTxt("start", c.GetMeta("name")), c.Start)
 	case "stop":
 		nextMenu = Confirm(confirmTxt("stop", c.GetMeta("name")), c.Stop)
+	case "kill":
+		nextMenu = Confirm(confirmTxt("kill", c.GetMeta("name")), c.Kill)
 	case "remove":
 		nextMenu = Confirm(confirmTxt("remove", c.GetMeta("name")), c.Remove)
 	case "pause":
@@ -346,7 +353,7 @@ func LogMenu() MenuFn {
 
 	logs, quit := logReader(c)
 	m := widgets.NewTextView(logs)
-	m.BorderLabel = fmt.Sprintf("Logs [%s]", c.GetMeta("name"))
+	m.BorderLabel = fmt.Sprintf("Logs [%s] (scroll: up/down/pgup/pgdown, [t] timestamp, [q] quit)", c.GetMeta("name"))
 	ui.Render(m)
 
 	ui.Handle("/sys/wnd/resize", func(e ui.Event) {
@@ -355,10 +362,19 @@ func LogMenu() MenuFn {
 	ui.Handle("/sys/kbd/t", func(ui.Event) {
 		m.Toggle()
 	})
-	ui.Handle("/sys/kbd/", func(ui.Event) {
+
+	HandleKeys("up", m.Up)
+	HandleKeys("down", m.Down)
+	HandleKeys("pgup", m.PageUp)
+	HandleKeys("pgdown", m.PageDown)
+
+	exitLog := func() {
 		quit <- true
 		ui.StopLoop()
-	})
+	}
+	HandleKeys("exit", exitLog)
+	ui.Handle("/sys/kbd/<enter>", func(ui.Event) { exitLog() })
+
 	ui.Loop()
 	return nil
 }

@@ -14,6 +14,10 @@ func (rc *Runc) Stop() error {
 	return ActionNotImplErr
 }
 
+func (rc *Runc) Kill() error {
+	return ActionNotImplErr
+}
+
 func (rc *Runc) Remove() error {
 	return ActionNotImplErr
 }

@@ -53,3 +53,11 @@ func TestFrameWriter(t *testing.T) {
 		t.Errorf("expected stdout %q, got %q", string(escBytes), stdout.String())
 	}
 }
+
+func TestManagerKill(t *testing.T) {
+	var mgr Manager = NewMock()
+	err := mgr.Kill()
+	if err == nil {
+		t.Fatalf("expected ActionNotImplErr for Mock.Kill(), got nil")
+	}
+}
